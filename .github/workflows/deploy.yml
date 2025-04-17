@@ -1,13 +1,40 @@
-name: Deploy Astro site
-on: [push]
+name: Deploy to GitHub Pages
+
+on:
+  # Rebuild on every push to main
+  push:
+    branches: [main]
+  # Manual trigger
+  workflow_dispatch:
+
+# Allow the jobs below to publish to Pages
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: withastro/action@v2
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install, build, and upload site
+        uses: withastro/action@v4
         with:
-          node-version: 18
-          deploy-branch: gh-pages
+          node-version: 18          # match your local version
+          # path: .                 # project root (default)
+          # package-manager: npm    # auto‑detected from lockfile
+          # No deploy‑branch needed anymore
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
