@@ -1,0 +1,66 @@
+---
+import { getCollection, render } from 'astro:content'
+import readingTime from 'reading-time'
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Bio from '../../components/Bio.astro';
+
+// Import the CollectionEntry type
+import type { CollectionEntry } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts')
+  return posts.map(p => ({
+    params: { slug: p.data.slug },
+    props: { post: p },
+  }));
+}
+
+// Use the CollectionEntry type that Astro expects
+const { post } = Astro.props as { post: CollectionEntry<'posts'> };
+const { title, slug, description, publishDate } = post.data;
+
+// Add a check to handle potentially undefined body
+const readingTimeEstimate = post.body ? readingTime(post.body).text : '0 min read';
+
+// Handle the potentially undefined Astro.site
+const siteUrl = Astro.site?.href || '/';
+const permalink = `${siteUrl}blog/${slug}`;
+const { Content } = await render(post);
+---
+
+<BaseLayout title={title} description={description} permalink={permalink} current="blog">
+  <header>
+    <p>{publishDate} ~ {readingTimeEstimate}</p>
+    <h1>{title}</h1>
+    <hr />
+  </header>
+  <div class="container">
+    <article class="content">
+      <Content />
+    </article>
+    <hr />
+    <Bio />
+  </div>
+</BaseLayout>
+
+<style>
+  header {
+    text-align: center;
+  }
+
+  header h1 {
+    margin-bottom: 0.7em;
+  }
+
+  header p {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-family: var(--font-family-sans);
+    font-weight: 600;
+  }
+
+  header hr {
+    min-width: 100px;
+    width: 30%;
+  }
+</style>
